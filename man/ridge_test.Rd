@@ -5,6 +5,5 @@
 \alias{ridge_test}
 \title{A data set for the second homework}
 \description{
-In homework 2 we explore the effect of lambda values
-on ridge regressions. This data set gives us a basis for exploration.
+This data is used to explore the effect of value of lambda.
 }

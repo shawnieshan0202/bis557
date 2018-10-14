@@ -11,9 +11,9 @@
 #ridge_train<-read.csv("/Users/shawnieshan/Desktop/ridge_train.csv")
 #ridge_test<-read.csv("/Users/shawnieshan/Desktop/ridge_test.csv")
 
-library(MASS)
+#library(MASS)
 #library(faraway)
-library(stats)
+#library(stats)
 
 #build ridge function
 ridge_reg<-function(formula, data, lambda){

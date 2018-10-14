@@ -3,7 +3,7 @@
 #' @description This function passes parameters to the ridge regression function.
 #' @param form a formula
 #' @param lambda a hyper parameter
-#' @param d a data.frame
+#' @param data a data.frame
 #' @return An ridge regression object
 #' @export
 
@@ -16,10 +16,10 @@
 #library(stats)
 
 #build ridge function
-ridge_reg<-function(form, lambda, d){
+ridge_reg<-function(form, lambda, data){
   rownames(data) = NULL
-  m<-model.matrix(form, d)
-  y<-matrix(d[,as.character(form)[2]],ncol=1)
+  m<-model.matrix(form, data)
+  y<-matrix(data[,as.character(form)[2]],ncol=1)
   y<-y[as.numeric(rownames(m)),,drop=FALSE]
   
 #Fit via svd

@@ -60,7 +60,7 @@ predict.ridge_reg<-function(object,...){
 lambda_seq=seq(0.1,100,by=0.1)
 mses=rep(NA, length(lambda_seq))
 for(i in 1:length(lambda_seq)){
-  fit=ridge_reg(y~.,ridge_train,lambda_seq[i])
+  fit=ridge_reg(y~.-1,ridge_train,lambda_seq[i])
   error=ridge_test$y-predict(fit,ridge_test)
   mses[i]=mean(error^2)
 }

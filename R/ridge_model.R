@@ -15,10 +15,10 @@
 #library(stats)
 
 #build ridge function
-ridge_reg<-function(formula, data, lambda){
+ridge_reg<-function(form, lambda, d){
   rownames(data) = NULL
-  m<-model.matrix(formula, data)
-  y<-matrix(data[,as.character(formula)[2]],ncol=1)
+  m<-model.matrix(form, d)
+  y<-matrix(d[,as.character(form)[2]],ncol=1)
   y<-y[as.numeric(rownames(m)),,drop=FALSE]
   
 #Fit via svd
@@ -30,10 +30,9 @@ svals<-svd_obj$d
 D<-diag(svals/(svals^2 +lambda))
 beta<-V %*% D %*% t(U) %*% y
 rownames(beta) = colnames(m)
-ret<- list(coefficients = beta, formula=formula, lambda=lambda)
+ret<- list(coefficients = beta, lambda=lambda,form=form)
 class(ret)<-"ridge_reg"
-return(ret)
-
+ret
 }#function end
 
 

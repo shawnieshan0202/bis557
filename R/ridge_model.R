@@ -1,8 +1,9 @@
 #' Fit a ridge regression model
 #'
 #' @description This function passes parameters to the ridge regression function.
-#' @param formula a formula
-#' @param data a data.frame
+#' @param form a formula
+#' @param lambda a hyper parameter
+#' @param d a data.frame
 #' @return An ridge regression object
 #' @export
 

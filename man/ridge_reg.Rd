@@ -4,10 +4,12 @@
 \alias{ridge_reg}
 \title{Fit a ridge regression model}
 \usage{
-ridge_reg(formula, data, lambda)
+ridge_reg(form, lambda, data)
 }
 \arguments{
-\item{formula}{a formula}
+\item{form}{a formula}
+
+\item{lambda}{a hyper parameter}
 
 \item{data}{a data.frame}
 }

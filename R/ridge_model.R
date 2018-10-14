@@ -12,7 +12,7 @@
 #ridge_test<-read.csv("/Users/shawnieshan/Desktop/ridge_test.csv")
 
 library(MASS)
-library(faraway)
+#library(faraway)
 library(stats)
 
 #build ridge function

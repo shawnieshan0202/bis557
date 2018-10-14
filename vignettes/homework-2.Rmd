@@ -44,16 +44,24 @@ predict.ridge_reg<-function(object,...){
   m %*% object$coefficients
 }
 
-library(MASS)
-library(foreach)
-library(doParallel)
-library(stats)
-formula<-y ~ x1 + x2 + x3 + x4
-lambda_seq<-seq(0.1,100,by=0.1)
-mses<-foreach(lambda=lambda_seq, .combine=c) %dopar% {
-fit<-ridge_reg(formula,ridge_train,lambda)
-error<-ridge_test$y-predict(fit,ridge_test)
-mean(error^2)
+#library(MASS)
+#library(foreach)
+#library(doParallel)
+#library(stats)
+#formula<-y ~ x1 + x2 + x3 + x4
+#lambda_seq<-seq(0.1,100,by=0.1)
+#mses<-foreach(lambda=lambda_seq, .combine=c) %dopar% {
+#fit<-ridge_reg(formula,ridge_train,lambda)
+#error<-ridge_test$y-predict(fit,ridge_test)
+#mean(error^2)
+#}
+
+#second way
+lambda_seq=seq(0.1,100,by=0.1)
+mses=rep(NA, length(lambda_seq)){
+  fit=ridge_reg(y~.,ridge_train,lambda_seq[i])
+  error=ridge_test$y-predict(fit,ridge_test)
+  mses[i]=mean(error^2)
 }
 
 plot(log(lambda_seq), mses, xlab="log(lambda)", ylab="Out-of-Sample Mean Square Error")

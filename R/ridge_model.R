@@ -4,7 +4,6 @@
 #' @param formula a formula
 #' @param data a data.frame
 #' @return An ridge regression object
-#' @importFrom stats model.matrix
 #' @export
 
 #read data files

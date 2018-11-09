@@ -1,0 +1,178 @@
+---
+title: "Homework3"
+author: "Xiangyi Shan"
+date: "11/8/2018"
+output: html_document
+---
+
+##Problem1
+```{r}
+set.seed(123)
+n <- 1000
+x <- runif(n,min=0,max=1)
+x.new <- runif(100,0,1)
+x.new <- sort(x.new)
+
+# Inputs: x, a numeric vector; h a numeric value
+# giving the bandwidth
+# Output: value of the Epanechnikov kernel
+kernel_epan <- function(x, h = 1) {
+x <- x / h
+ran <- as.numeric(abs(x) <= 1)
+val <- (3/4) * ( 1 - x^2 ) * ran
+return(val)
+}
+
+
+##Apply one-dimensional (Epanechnikov) kernel regression.
+
+##Args:
+# x: Numeric vector of the original predictor variables.
+# x_new: A vector of data values at which to estimate.
+# h: A numeric value giving the bandwidth of the kernel.
+##Returns:
+# A vector of predictions for each value in x_new.
+kernel_reg <- function(x, x.new, h) {
+sapply(x.new, function(v) {
+yhat <- mean(kernel_epan((v-x),h))/h
+yhat
+})
+}
+
+#plot the density function to compare the kernel curve
+h = c(0.1, 0.2, 0.3, 0.5,1)
+i=1
+for (i in h){
+  plot(x.new, kernel_reg(x,x.new,i), ylab = "Estimation", main = "Kernel density", type = "l")  
+}
+```
+Conclusion: From the plots above, we can see the larger bandwidth have the more smooth kernel density curve.
+
+##Problem2
+f is called convex if:
+$\forall x_1$,$x_2\in X$, $\forall t \in$ [0,1], $f(tx_1+(1-t)x_2)\le tf(x_1)+(1-t)f(x_2)$
+Assume $f_1$ and $f_2$ to be convex
+$$
+f_1(tx_1+(1-t)x_2)\le tf_1(x_1)+(1-t)f_1(x_2)
+$$
+and
+$$
+f_2(tx_1+(1-t)x_2)\le tf_2(x_1)+(1-t)f_1(x_2)
+$$
+then define
+$$
+g(x)=f_1+f_2
+$$
+where
+$$
+f_1(tx_1+(1-t)x_2)+f_2(tx_1+(1-t)x_2) \le tf_1(x_1)+(1-t)f_1(x_2)+tf_2(x_1)+(1-t)f_1(x_2)
+$$
+$$
+g(cx_1+(1-c)x_2) \le cg(x_1)+(1-c)g(x_2)
+$$
+Therefore, $g(x)=f_1+f_2$ is a convex function
+
+##Problem3
+Let $x$, $y \in R$
+Let $\alpha$, $\beta \in R_{\ge0}$, where $\alpha + \beta =1$
+$$
+\begin{aligned}
+f(\alpha x + \beta y) &= |\alpha x + \beta y|\\
+&\le |\alpha x |+ |\beta y|\\
+&= |\alpha|| x |+ |\beta|| y|\\
+&= \alpha| x |+ \beta| y|\\
+&= |\alpha|f(x)+ |\beta|f(y)\\
+\end{aligned}
+$$
+According to the definition of convexity
+Let $f$ be a real function defined on a real interval $I$, f os convex on $I$ if and only if:
+$$
+f(\alpha x + \beta y) \le \alpha f(x)+ \beta f(y)\:\:\:\forall x,y \in I: \forall \alpha,\beta \in R_{\ge0},\: \alpha + \beta =1
+$$
+Therefore, the absolute value function is convex.
+
+$$
+|X|_n = \sum_{r=1}^{n}|X_r|, n \in Z^+ 
+$$
+if $n=1$, then $|X|_1 =|X_1|$ is convex (by previous proof)
+Assume $|X|_n$ is convex for some $n=k, k\in Z^+$, then
+$$
+|X|_{k+1}=\sum_{r=1}^{k+1}|X_r|=|X_{k+1}| + \sum_{r=1}^{k}|X_k|=|X_{k+1}|+|X|_k
+$$
+is convex since |X_{k+1}| is convex (by previous proof) and sum of two conven function is also convex.
+By mathematical, $l_1$ norm, is convex for all $n \in Z^+$
+
+##Problem4
+Let us assume that 
+$$
+f(x) = x^2
+$$
+then we expand the equation, we have
+$$
+\begin{aligned}
+f(tx+(1-t)y) &=t^2x^2 + (1-t)^2y^2+2t(1-t)xy \\
+tf(x)+(1-t)f(y)&=tx^2+(1-t)y\\
+f(tx+(1-t)y)-[tf(x)+(1-t)f(y)]&=t(t-1)x^2+t(t-1)y^2+2t(1-t)xy\\
+&=t(1-t)(-x^2-y^2+2xy)\\
+&=t(t-1)(x-y)^2\\
+&\leq0
+\end{aligned}
+$$
+Since we have $0\leq t \leq1$, then 
+$$
+f(tx+(1-t)y) \leq tf(x)+(1-t)f(y)
+$$
+Therefore, $f(x) = x^2$ is convex by definition
+
+According to page 181 in the textbook, Objective function of elastic net is
+$$
+\frac{1}{2n}||y-Xb||^2_2+\lambda[(1-\alpha)\frac{1}{2}||b||^2_2+\alpha||b||_1]
+$$
+Since we know $l_1\ norm$ is convex and $l_2\ norm$ is also convex, then sum of two convexes is convex function by previous proof.
+
+##Problem5
+```{r}
+library(glmnet)
+# Check current KKT conditions for regression vector.
+##Args:
+# X: A numeric data matrix.
+# y: Response vector.
+# b: Current value of the regression vector.
+# lambda: The penalty term.
+##Returns:
+# A logical vector indicating where the KKT conditions have
+# been violated by the variables that are currently zero.
+casl_lenet_check_kkt <-
+function(X, y, b, lambda)
+{
+resids <- y - X %*% b
+s <- apply(X, 2, function(xj) crossprod(xj, resids)) /
+lambda / nrow(X)
+# Return a vector indicating where the KKT conditions have
+# been violated by the variables that are currently zero.
+(b == 0) & (abs(s) >= 1)
+}
+
+#Create the datasets
+set.seed(1)
+n <- 1000L
+p <- 5000L
+X <- matrix(rnorm(n * p), ncol = p)
+beta <- c(seq(1, 0.1, length.out=(10L)), rep(0, p - 10L))
+y <- X %*% beta + rnorm(n = n, sd = 0.15)
+
+#apply lasso regression
+lasso_reg_with_screening <- function(x, y){
+  m1 <- cv.glmnet(x,y,alpha=1)
+  lambda <- m1$lambda.1se
+  beta <- m1$glmnet.fit$beta[, m1$lambda == lambda]
+  print(beta)
+ casl_lenet_check_kkt(X, y, beta, lambda)
+}
+#screen the dataset
+result <-lasso_reg_with_screening(X, y)
+```
+After checking KKT, there are 10 coefficients has value and the rest of coefficient is 0 which is false. Therefore, there is little KTT violation in the case. 
+
+
+

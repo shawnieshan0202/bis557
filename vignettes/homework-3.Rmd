@@ -166,7 +166,7 @@ lasso_reg_with_screening <- function(x, y){
   m1 <- cv.glmnet(x,y,alpha=1)
   lambda <- m1$lambda.1se
   beta <- m1$glmnet.fit$beta[, m1$lambda == lambda]
-  print(beta)
+  # print(beta)
  casl_lenet_check_kkt(X, y, beta, lambda)
 }
 #screen the dataset

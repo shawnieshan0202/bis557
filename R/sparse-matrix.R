@@ -32,12 +32,12 @@ sparse.matrix <- function(i, j, x, dims = c(max(i), max(j))){
 #' b <- data.frame(i = c(1, 2, 2), j = c(1, 1, 2), x = c(4.4, 1.2, 3))
 #' sparse_add <- function(a,b)
 #' @export
-`+.sparse.matrix` <- function(a, b){
-  
+`+.sparse.matrix` <- function(a, b)
+{
   if (!inherits(b, "sparse.matrix"))
-    stop ("b is not a sparse.matrix type.")
+    stop ("b is not a sparse.matrix.")
   if (!identical(a[[2]], b[[2]]))
-    stop("dimensions not match")
+    stop("incorrect dimension")
   
   c <- merge(a[[1]], b[[1]], by = c("i", "j"), all = TRUE, suffixes = c("1", "2"))
   c$x1[is.na(c$x1)] <- 0
@@ -58,21 +58,12 @@ sparse.matrix <- function(i, j, x, dims = c(max(i), max(j))){
 #' b <- data.frame(i = c(1, 2, 2), j = c(1, 1, 2), x = c(4.4, 1.2, 3))
 #' sparse_multiply(a,b)
 #' @export
-
-`%*%.default` = .Primitive("%*%")  # keep defalut
-`%*%` = function(x,...){ 
-  UseMethod("%*%",x)
-}
-`%*%` <- function(x, y) {
-  UseMethod("%*%", x)
-}
-
-`%*%.sparse.matrix` <- function(a, b){
-  
+`%*%.sparse.matrix` <- function(a, b)
+{
   if (!inherits(b, "sparse.matrix"))
-    stop ("b is not a sparse.matrix type.")
+    stop ("b is not a sparse.matrix.")
   if ((a[[2]][2] != b[[2]][1]))
-    stop("dimensions not match")
+    stop("incorrect dimension")
   
   colnames(b[[1]]) <- c("i2", "j2", "x2")
   c <- merge(a[[1]], b[[1]], by.x = "j", by.y = "i2",
@@ -96,14 +87,23 @@ sparse.matrix <- function(i, j, x, dims = c(max(i), max(j))){
 #' a <- data.frame(i = c(1, 2), j = c(1, 1), x = c(3, 1))
 #' sparse_transpose(a)
 #' @export
-t <- function (x, ...) {
-  UseMethod("t", x)
-}
-
-`t.sparse.matrix` <- function(a){
-  temp <- a[[1]]$i
+`t.sparse.matrix` <- function(a)
+{
+  c <- a[[1]]$i
   a[[1]]$i <- a[[1]]$j
-  a[[1]]$j <- temp
+  a[[1]]$j <- c
   a[[2]] <- rev(a[[2]])
   return(a)
+}
+
+#since multiply is not the object of S3
+`%*%.default` = .Primitive("%*%")
+`%*%` = function(x,...){ 
+  UseMethod("%*%",x)
+}
+`%*%` <- function(x, y) {
+  UseMethod("%*%", x)
+}
+t <- function (x, ...) {
+  UseMethod("t", x)
 }

@@ -28,12 +28,14 @@ sparse.matrix <- function(i, j, x, dims = c(max(i), max(j))){
 #' @param b A list describing a sparse matrix.
 #' @reture A list describing the sum of a and b as a sparse matrix.
 #' @examples
-#' a <- data.frame(i = c(1, 2), j = c(1, 1), x = c(3, 1))
-#' b <- data.frame(i = c(1, 2, 2), j = c(1, 1, 2), x = c(4.4, 1.2, 3))
+#' a <- sparse.matrix(i = c(1, 2), j = c(1, 1), x = c(3, 1))
+#' b <- sparse.matrix(i = c(1, 2, 2), j = c(1, 1, 2), x = c(4.4, 1.2, 3))
 #' sparse_add <- function(a,b)
 #' @export
 `+.sparse.matrix` <- function(a, b)
 {
+  if (!inherits(a, "sparse.matrix"))
+    stop ("a is not a sparse.matrix.")
   if (!inherits(b, "sparse.matrix"))
     stop ("b is not a sparse.matrix.")
   if (!identical(a[[2]], b[[2]]))
@@ -54,12 +56,14 @@ sparse.matrix <- function(i, j, x, dims = c(max(i), max(j))){
 #' @param b A list describing a sparse matrix.
 #' @returns A list describing the product of a and b as a sparse matrix.
 #' @examples 
-#' a <- data.frame(i = c(1, 2), j = c(1, 1), x = c(3, 1))
-#' b <- data.frame(i = c(1, 2, 2), j = c(1, 1, 2), x = c(4.4, 1.2, 3))
+#' a <- sparse.matrix(i = c(1, 2), j = c(1, 1), x = c(3, 1))
+#' b <- sparse.matrix(i = c(1, 2, 2), j = c(1, 1, 2), x = c(4.4, 1.2, 3))
 #' sparse_multiply(a,b)
 #' @export
 `%*%.sparse.matrix` <- function(a, b)
 {
+  if (!inherits(a, "sparse.matrix"))
+    stop ("a is not a sparse.matrix.")
   if (!inherits(b, "sparse.matrix"))
     stop ("b is not a sparse.matrix.")
   if ((a[[2]][2] != b[[2]][1]))
@@ -84,7 +88,7 @@ sparse.matrix <- function(i, j, x, dims = c(max(i), max(j))){
 #' @param a A list describing a sparse matrix.
 #' @returns A list describing the transpose of a as a sparse matrix.
 #' @examples 
-#' a <- data.frame(i = c(1, 2), j = c(1, 1), x = c(3, 1))
+#' a <- sparse.matrix(i = c(1, 2), j = c(1, 1), x = c(3, 1))
 #' sparse_transpose(a)
 #' @export
 `t.sparse.matrix` <- function(a)

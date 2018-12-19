@@ -32,6 +32,7 @@ sparse.matrix <- function(i, j, x, dims = c(max(i), max(j))){
 #' b <- sparse.matrix(i = c(1, 2, 2), j = c(1, 1, 2), x = c(4.4, 1.2, 3))
 #' sparse_add <- function(a,b)
 #' @export
+
 `+.sparse.matrix` <- function(a, b)
 {
   if (!inherits(a, "sparse.matrix"))
@@ -50,16 +51,17 @@ sparse.matrix <- function(i, j, x, dims = c(max(i), max(j))){
 }
 
 #' Multiply-textbook p294-295
-#'
-#' @description Function is used to multiply two sparse matrices stored as triplet lists.
+#' 
+#' @description This function is used to plus two sparse matrices stored as triplet lists.
 #' @param a A list describing a sparse matrix.
 #' @param b A list describing a sparse matrix.
-#' @returns A list describing the product of a and b as a sparse matrix.
-#' @examples 
+#' @reture A list describing the sum of a and b as a sparse matrix.
+#' @examples
 #' a <- sparse.matrix(i = c(1, 2), j = c(1, 1), x = c(3, 1))
 #' b <- sparse.matrix(i = c(1, 2, 2), j = c(1, 1, 2), x = c(4.4, 1.2, 3))
-#' sparse_multiply(a,b)
+#' sparse_multiply <- function(a,b)
 #' @export
+
 `%*%.sparse.matrix` <- function(a, b)
 {
   if (!inherits(a, "sparse.matrix"))
@@ -84,13 +86,15 @@ sparse.matrix <- function(i, j, x, dims = c(max(i), max(j))){
 
 #' Transpose
 #' 
-#' @description This funcdtion is used to transpose a sparse matrix
+#' @description This function is used to plus two sparse matrices stored as triplet lists.
 #' @param a A list describing a sparse matrix.
-#' @returns A list describing the transpose of a as a sparse matrix.
-#' @examples 
+#' @reture A list describing the sum of a and b as a sparse matrix.
+#' @examples
 #' a <- sparse.matrix(i = c(1, 2), j = c(1, 1), x = c(3, 1))
-#' sparse_transpose(a)
+#' sparse_transpose <- function(a,b)
 #' @export
+
+
 `t.sparse.matrix` <- function(a)
 {
   c <- a[[1]]$i
@@ -100,7 +104,6 @@ sparse.matrix <- function(i, j, x, dims = c(max(i), max(j))){
   return(a)
 }
 
-#since multiply is not the object of S3
 `%*%.default` = .Primitive("%*%")
 `%*%` = function(x,...){ 
   UseMethod("%*%",x)
@@ -108,6 +111,7 @@ sparse.matrix <- function(i, j, x, dims = c(max(i), max(j))){
 `%*%` <- function(x, y) {
   UseMethod("%*%", x)
 }
+
 t <- function (x, ...) {
   UseMethod("t", x)
 }

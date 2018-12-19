@@ -2,9 +2,7 @@
 title: "Ridge Regression"
 author: "Xiangyi Shan"
 date: "10/13/2018"
-output:  html_document:
-    self_contained: yes
-    toc: true
+output:  html_document
 ---
 
 <!--

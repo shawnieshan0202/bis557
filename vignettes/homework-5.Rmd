@@ -27,7 +27,7 @@ library(readr)
 library(moments)
 ```
 
-```{r}
+```{r,eval=FALSE}
 library(keras)
 #install_keras()
 set.seed(365) 
@@ -189,7 +189,7 @@ cat('Test accuracy:', scores[[2]], '\n')
 
 
 #Problem2.
-```{r}
+```{r,eval=FALSE}
 #library(R.matlab)
 #emnist <- readMat("/Users/shawnieshan/Desktop/emnist-byclass.mat")
 #save(emnist, file='/Users/shawnieshan/Desktop/emnist.RData')
@@ -335,7 +335,7 @@ mean)
 
 
 #problem3
-```{r}
+```{r,eval=FALSE}
 #code reference: textbook p211
 
 

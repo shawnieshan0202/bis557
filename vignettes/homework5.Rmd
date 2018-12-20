@@ -1,0 +1,550 @@
+---
+title: "Untitled"
+author: "Xiangyi Shan"
+date: "12/19/2018"
+output: html_document
+---
+
+<!--
+%\VignetteEngine{knitr::rmarkdown}
+%\VignetteIndexEntry{The Homework 5 vignette}
+-->
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+##1. Increase the out-of-sample prediction accuracy by extracting predictive features from the images with LASSO and CNN method.
+
+Reference:
+textbook p250
+http://apapiu.github.io/2016-01-02-minst/
+With help from patty zhang for the first question
+
+#load all the libraries
+```{r, eval=FALSE}
+library(tidyverse)
+library(glmnet)
+library(tidyr)
+library(ggplot2)
+library(readr)
+#library(tensorflow)
+library(moments)
+```
+
+```{r, eval=FALSE}
+library(keras)
+#install_keras()
+set.seed(365) 
+# The data, shuffled and split between train and test sets
+#according to the code given in calss
+mnist <- dataset_mnist()
+x_train <- mnist$train$x
+y_train <- mnist$train$y
+x_test <- mnist$test$x
+y_test <- mnist$test$y
+y_train <- factor(y_train)
+y_test <- factor(y_test)
+x_train <- array_reshape(x_train, c(60000, 28^2))
+x_test <- array_reshape(x_test, c(10000, 28^2))
+s<- sample(seq_along(y_train), 1000)
+fit <- cv.glmnet(x_train[s,], y_train[s], family = "multinomial")
+#out-of-sample prediction accuracy by using minimum lambda
+preds1 <- predict(fit$glmnet.fit, x_train[s,], s = fit$lambda.min, type = "class") 
+t1 <- table(as.vector(preds1), y_train[s])
+#out-of-sample prediction accuracy by using 1se lambda
+preds2 <- predict(fit$glmnet.fit, x_test, s = fit$lambda.min, type = "class") 
+t2 <- table(as.vector(preds2), y_test)
+
+sum(diag(t1)) / sum(t1)
+sum(diag(t2)) / sum(t2)
+#According to the result above, the in-sample prediction accuracy on training dataset is 0.985, and the out-of-sample prediction accuracy on testing dataset is 0.8452.
+
+
+
+#According to the code http://apapiu.github.io/2016-01-02-minst/
+#takes the mean of each row in train
+intensity_mean<-apply(x_train,1,mean)
+intbylabel<-aggregate(intensity_mean,by=list(y_train),FUN = mean)
+plot1<-ggplot(data =intbylabel,aes(x=Group.1,y=x))+
+  geom_bar(stat = "identity")
+plot1+scale_x_discrete(limits=0:9)+xlab("digit label")+
+  ylab("intensity")
+#In the plot, digit 2 has the lowest intensity, and digit 1 has the highest intensity. The digits are different.
+
+kurtosis<-apply(x_train,1,kurtosis)
+kurtosis_label<-aggregate(kurtosis,by=list(y_train),FUN = kurtosis)
+plot2<-ggplot(data = kurtosis_label,aes(x=Group.1,y=x))+
+  geom_bar(stat = "identity")
+plot2+scale_x_discrete(limits=0:9)+xlab("digit label")+
+  ylab("kurtosis")
+#In the plot, the value of kurtosis is different among pixels.
+
+skewness<-apply(x_train,1,skewness)
+skewness_label<-aggregate(skewness,by=list(y_train),FUN = skewness)
+plot3<-ggplot(data = skewness_label,aes(x=Group.1,y=x))+
+  geom_bar(stat = "identity")
+plot3+scale_x_discrete(limits=0:9)+xlab("digit label")+
+  ylab("skewness")
+#In the plot, the skewness are different among different digits. 
+
+
+
+
+#Increase the out-of-sample prediction accuracy by extracting predictive features from the #images.
+intensity<-as.vector(intensity_mean)
+x_train<-cbind(x_train,intensity)
+x_test<-cbind(x_test,as.vector(apply(x_test,1,mean)))
+fit <- cv.glmnet(x_train[s,], y_train[s], family = "multinomial")
+#in-sample
+preds3 <- predict(fit$glmnet.fit, x_train[s,], s = fit$lambda.min, type = "class")
+t3 <- table(as.vector(preds3), y_train[s])
+sum(diag(t3)) / sum(t3) # 0.979
+#out of sample
+preds4 <- predict(fit$glmnet.fit, x_test, s = fit$lambda.min, type = "class")
+t4 <- table(as.vector(preds4), y_test)
+sum(diag(t4)) / sum(t4) #0.8455
+#The out-of-sample prediction accuracy is higher than the original model.
+
+
+#Adding kurtosis to the model 
+kurtosis<-as.vector(kurtosis)
+x_train<-cbind(x_train,kurtosis)
+x_test<-cbind(x_test,as.vector(apply(x_test,1,kurtosis)))
+#With intensity and kurtosis in the features
+fit <- cv.glmnet(x_train[s,], y_train[s], family = "multinomial")
+#in sample
+preds5 <- predict(fit$glmnet.fit, x_train[s, ], s = fit$lambda.min, type = "class")
+t5 <- table(as.vector(preds5), y_train[s])
+sum(diag(t5)) / sum(t5) #0.985
+# out-of-sample
+preds6 <- predict(fit$glmnet.fit, x_test, s = fit$lambda.min, type = "class")
+t6 <- table(as.vector(preds6), y_test)
+sum(diag(t6)) / sum(t6) #0.8458
+
+
+#In conclusion, out-of-sample prediction accuracy increase when we increase the variables in to the model. 
+
+#In-sample accuracy on training data is better than out-of-sample accuracy on testing dataset, which leads to overfitting.
+
+
+
+#Parameters for network
+batch_size <- 128 
+num_classes <- 10
+epochs <- 2 
+
+#Input image dimensions:
+img_rows <- 28
+img_cols <- 28
+
+# Spliting train and test sets
+mnist <- dataset_mnist()
+x_train <- mnist$train$x
+y_train <- mnist$train$y
+x_test <- mnist$test$x
+y_test <- mnist$test$y
+
+# Redefine dimension of train/test inputs
+x_train <- array_reshape(x_train, c(nrow(x_train), img_rows, img_cols, 1))
+x_test <- array_reshape(x_test, c(nrow(x_test), img_rows, img_cols, 1))
+input_shape <- c(img_rows, img_cols, 1)
+
+# Transform RGB values into [0,1] range
+x_train <- x_train / 255
+x_test <- x_test / 255
+
+#cat('x_train_shape:', dim(x_train), '\n')
+#cat(nrow(x_train), 'train samples\n')
+#cat(nrow(x_test), 'test samples\n')
+
+# Convert class vectors to binary class matrices
+y_train <- to_categorical(y_train, num_classes)
+y_test <- to_categorical(y_test, num_classes)
+
+# Define model
+model <- keras_model_sequential() %>%
+  layer_conv_2d(filters = 32, kernel_size = c(3,3), activation = 'relu',input_shape = input_shape) %>% 
+  layer_conv_2d(filters = 64, kernel_size = c(3,3), activation = 'relu') %>% 
+  layer_max_pooling_2d(pool_size = c(2, 2)) %>% 
+  layer_dropout(rate = 0.25) %>% 
+  layer_flatten() %>% 
+  layer_dense(units = 128, activation = 'relu') %>% 
+  layer_dropout(rate = 0.5) %>% 
+  layer_dense(units = num_classes, activation = 'softmax')
+
+# Compile model
+model %>% compile(loss = loss_categorical_crossentropy,optimizer = optimizer_adadelta(), metrics = c('accuracy'))
+
+# Train model
+model %>% fit(x_train, y_train, batch_size = batch_size, epochs = epochs, validation_split = 0.2)
+
+#out of sample prediction accuracy
+scores <- model %>% evaluate(x_test, y_test, verbose = 0)
+
+#output
+cat('Test loss:', scores[[1]], '\n')
+cat('Test accuracy:', scores[[2]], '\n')
+
+#In conclusion, the out-of-sample prediction accuracy is over 97%, which means that out-of-sample prediction increases in the CNN method. 
+
+#CNN works pretty well in identifying handwriting characters than does LASSO.
+```
+
+
+
+#Problem2.
+```{r}
+#library(R.matlab)
+#emnist <- readMat("/Users/shawnieshan/Desktop/emnist-byclass.mat")
+#save(emnist, file='/Users/shawnieshan/Desktop/emnist.RData')
+#emnist dataset from https://www.westernsydney.edu.au/bens/home/reproducible_research/emnist
+
+#load(file='emnist.RData')
+#split data into train and test, use mnist data not EMNIST data which is too large
+Y_train <- data.frame(train_id="train", class=y_train, class_name=letters[as.numeric(y_train)])
+Y_valid <- data.frame(train_id="test", class=y_test, class_name=letters[as.numeric(y_test)])
+emnist <- rbind(Y_train, Y_valid)
+
+#code reference: textbook p250
+x28 <- rbind(x_train, x_test)
+
+#The actual pixel data is contained in a four dimensional array.
+dim(x28) <- c(70000, 28, 28, 1)
+
+#The first step in setting up the data is to convert the categorical variable
+#class into a matrix with 26 columns. We will make use of the keras function
+#to_categorical; notice that it expects the first category to be zero.
+Y <- to_categorical(emnist$class, num_classes=26L)
+Y_train <- Y[emnist$train_id == "train",]
+Y_valid <- Y[emnist$train_id != "train",]
+
+#Next, we need to flatten the pixel data x28 into a matrix. This is achieved by
+#applying the cbind function of the rows to the array. We then split the data
+#into training and testing sets.
+X <- t(apply(x28, 1, cbind))
+X_train <- X[emnist$train_id == "train",]
+dim(X_train) <- c(60000, 28, 28, 1)
+X_valid <- X[emnist$train_id != "train",]
+dim(X_valid) <- c(10000, 28, 28, 1)
+
+
+#Our first task will be to fit a shallow neural network without any hidden nodes.
+#This will help to explain the basic functionality of the keras package and allow
+#us to visualize the learned weights. The first step in building a neural network
+#is to call the function keras_model_sequential. This constructs an empty
+#model that we can then add layers to.
+model <- keras_model_sequential()
+
+#Then, we build a keras model as usual, but use the convolutional layers
+#layer_conv_2d and layer_max_pooling_2d. Options to these determine the
+#number of filters, the kernel size, and options for padding the input.
+model %>%
+layer_conv_2d(filters = 32, kernel_size = c(2,2),
+input_shape = c(28, 28, 1),
+padding = "same") %>%
+layer_activation(activation = "relu") %>%
+layer_conv_2d(filters = 32, kernel_size = c(2,2),
+padding = "same") %>%
+layer_activation(activation = "relu") %>%
+layer_max_pooling_2d(pool_size = c(2, 2)) %>%
+layer_dropout(rate = 0.5) %>%
+layer_conv_2d(filters = 32, kernel_size = c(2,2),
+padding = "same") %>%
+layer_activation(activation = "relu") %>%
+layer_conv_2d(filters = 32, kernel_size = c(2,2),
+padding = "same") %>%
+layer_activation(activation = "relu") %>%
+layer_max_pooling_2d(pool_size = c(2, 2)) %>%
+layer_dropout(rate = 0.5) %>%
+layer_flatten() %>%
+layer_dense(units = 128) %>%
+layer_activation(activation = "relu") %>%
+layer_dense(units = 128) %>%
+layer_activation(activation = "relu") %>%
+layer_dropout(rate = 0.5) %>%
+layer_dense(units = 26) %>%
+layer_activation(activation = "softmax")
+
+
+# Compiling and fitting a convolutional neural network is done exactly the
+#same way that dense neural networks are used in keras.
+model %>% compile(loss = 'categorical_crossentropy',
+                  optimizer = optimizer_rmsprop(),
+                  metrics = c('accuracy'))
+history <- model %>% 
+  fit(X_train, Y_train, epochs = 10, validation_data = list(X_valid, Y_valid))
+
+#The prediction accuracy is now significantly improved, with a testing accuracy
+#of over 90%.
+emnist$predict <- predict_classes(model, x28)
+tapply(emnist$predict == emnist$class, emnist$train_id,
+mean) 
+
+
+#changing kernel size to 5, and epoches changes to 6 to see of prediction accuracy increase.
+
+#Our first task will be to fit a shallow neural network without any hidden nodes.
+#This will help to explain the basic functionality of the keras package and allow
+#us to visualize the learned weights. The first step in building a neural network
+#is to call the function keras_model_sequential. This constructs an empty
+#model that we can then add layers to.
+model <- keras_model_sequential()
+
+#Then, we build a keras model as usual, but use the convolutional layers
+#layer_conv_2d and layer_max_pooling_2d. Options to these determine the
+#number of filters, the kernel size, and options for padding the input.
+model %>%
+layer_conv_2d(filters = 32, kernel_size = c(5,5),
+input_shape = c(28, 28, 1),
+padding = "same") %>%
+layer_activation(activation = "relu") %>%
+layer_conv_2d(filters = 32, kernel_size = c(5,5),
+padding = "same") %>%
+layer_activation(activation = "relu") %>%
+layer_max_pooling_2d(pool_size = c(2, 2)) %>%
+layer_dropout(rate = 0.5) %>%
+layer_conv_2d(filters = 32, kernel_size = c(5,5),
+padding = "same") %>%
+layer_activation(activation = "relu") %>%
+layer_conv_2d(filters = 32, kernel_size = c(5,5),
+padding = "same") %>%
+layer_activation(activation = "relu") %>%
+layer_max_pooling_2d(pool_size = c(2, 2)) %>%
+layer_dropout(rate = 0.5) %>%
+layer_flatten() %>%
+layer_dense(units = 128) %>%
+layer_activation(activation = "relu") %>%
+layer_dense(units = 128) %>%
+layer_activation(activation = "relu") %>%
+layer_dropout(rate = 0.5) %>%
+layer_dense(units = 26) %>%
+layer_activation(activation = "softmax")
+
+
+# Compiling and fitting a convolutional neural network is done exactly the
+#same way that dense neural networks are used in keras.
+model %>% compile(loss = 'categorical_crossentropy',
+                  optimizer = optimizer_rmsprop(),
+                  metrics = c('accuracy'))
+history <- model %>% 
+  fit(X_train, Y_train, epochs = , validation_data = list(X_valid, Y_valid))
+
+#The prediction accuracy is now significantly improved, with a testing accuracy
+#of over 90%.
+emnist$predict <- predict_classes(model, x28)
+tapply(emnist$predict == emnist$class, emnist$train_id,
+mean) 
+```
+
+
+
+#problem3
+```{r}
+#code reference: textbook p211
+
+
+# Create list of weights to describe a dense neural network.
+##
+#Args:
+# sizes: A vector giving the size of each layer, including
+# the input and output layers.
+##
+#Returns:
+# A list containing initialized weights and biases.
+casl_nn_make_weights <- 
+  function(sizes) {
+  L <- length(sizes) - 1L
+  weights <- vector("list", L)
+  for (j in seq_len(L)) {
+    w <- matrix(rnorm(sizes[j] * sizes[j + 1L]), ncol = sizes[j], nrow = sizes[j + 1L])
+    weights[[j]] <- list(w=w, b=rnorm(sizes[j + 1L]))
+  }
+  weights 
+}
+
+#Next, we need to define the ReLU function for the forward pass:
+
+# Apply a rectified linear unit (ReLU) to a vector/matrix.
+##
+#Args:
+# v: A numeric vector or matrix.
+##
+#Returns:
+# The original input with negative values truncated to zero.
+casl_util_ReLU <-
+function(v)
+{
+v[v < 0] <- 0
+v
+}
+
+#And the derivative of the ReLU function for the backwards pass:
+
+# Apply derivative of the rectified linear unit (ReLU).
+##
+#Args:
+# v: A numeric vector or matrix.
+##
+#Returns:
+# Sets positive values to 1 and negative values to zero.
+casl_util_ReLU_p <- function(v) {
+  p <- v * 0
+  p[v > 0] <- 1
+  p
+}
+
+
+
+
+# casl_util_mad_p API
+# Derivative of the mean absolute deviance (MAD).
+#
+# Args:
+#     y: A numeric variable of responses.
+#     pred: A numeric variable of predicted responses.
+#
+# Returns:
+#     Returned current derivative MAD
+casl_util_mad_p <- function(y, a) {
+  derloss <- c()
+  for (i in 1:length(a)) {
+    if (a[i] >= mean(y)) derloss[i]=1
+    else derloss[i]=-1
+  }
+  return(derloss)
+}
+
+# Apply forward propagation to a set of NN weights and biases.
+##
+#Args:
+# x: A numeric vector representing one row of the input.
+# weights: A list created by casl_nn_make_weights.
+# sigma: The activation function.
+##
+#Returns:
+# A list containing the new weighted responses (z) and
+# activations (a).
+casl_nn_forward_prop <- 
+  function(x, weights, sigma) {
+  L <- length(weights)
+  z <- vector("list", L)
+  a <- vector("list", L)
+  for (j in seq_len(L)) {
+    a_j1 <- if(j == 1) x else a[[j - 1L]]
+    z[[j]] <- weights[[j]]$w %*% a_j1 + weights[[j]]$b
+    a[[j]] <- if (j != L) sigma(z[[j]]) else z[[j]]
+  }
+  list(z=z, a=a)
+}
+
+
+# Apply backward propagation algorithm.
+##
+#Args:
+# x: A numeric vector representing one row of the input.
+# y: A numeric vector representing one row of the response.
+# weights: A list created by casl_nn_make_weights.
+# f_obj: Output of the function casl_nn_forward_prop.
+# sigma_p: Derivative of the activation function.
+# f_p: Derivative of the loss function.
+##
+#Returns:
+# A list containing the new weighted responses (z) and
+# activations (a).
+casl_nn_backward_prop <- 
+  function(x, y, weights, f_obj, sigma_p, f_p) {
+  z <- f_obj$z
+  a <- f_obj$a
+  L <- length(weights)
+  grad_z <- vector("list", L)
+  grad_w <- vector("list", L)
+  for (j in rev(seq_len(L))) {
+    if (j == L) {
+      grad_z[[j]] <- f_p(y, a[[j]])
+      } 
+    else {
+      grad_z[[j]] <- (t(weights[[j + 1]]$w) %*% grad_z[[j + 1]]) * sigma_p(z[[j]])
+      }
+    a_j1 <- if(j == 1) x else a[[j - 1L]]
+    grad_w[[j]] <- grad_z[[j]] %*% t(a_j1)
+  }
+  list(grad_z=grad_z, grad_w=grad_w)
+}
+#Using these building blocks, we can write a function casl_nn_sgd that
+#takes input data, runs SGD, and returns the learned weights from the model.
+#As inputs we also include the number of epochs (iterations through the data)
+#and the learning rate eta.
+# Apply stochastic gradient descent (SGD) to estimate NN.
+##
+#Args:
+# X: A numeric data matrix.
+# y: A numeric vector of responses.
+# sizes: A numeric vector giving the sizes of layers in
+# the neural network.
+# epochs: Integer number of epochs to computer.
+# eta: Positive numeric learning rate.
+# weights: Optional list of starting weights.
+##
+#Returns:
+# A list containing the trained weights for the network.
+casl_nn_sgd <- 
+  function(X, y, sizes, epochs, eta, weights=NULL) {
+  if (is.null(weights)) {
+    weights <- casl_nn_make_weights(sizes)
+    }
+  for (epoch in seq_len(epochs)) {
+    for (i in seq_len(nrow(X))) {
+      f_obj <- casl_nn_forward_prop(X[i,], weights, casl_util_ReLU)
+      b_obj <- casl_nn_backward_prop(X[i,], y[i,], weights, f_obj, casl_util_ReLU_p,casl_util_mad_p)
+      for (j in seq_along(b_obj)) {
+        weights[[j]]$b <- weights[[j]]$b - eta * b_obj$grad_z[[j]]
+        weights[[j]]$w <- weights[[j]]$w - eta * b_obj$grad_w[[j]]
+  }
+  } 
+  }
+  weights 
+}
+
+# Predict values from a training neural network.
+##
+#Args:
+# weights: List of weights describing the neural network.
+# X_test: A numeric data matrix for the predictions.
+##
+#Returns:
+# A matrix of predicted values.
+casl_nn_predict <- 
+  function(weights, X_test) {
+  p <- length(weights[[length(weights)]]$b)
+  y_hat <- matrix(0, ncol = p, nrow = nrow(X_test))
+  for (i in seq_len(nrow(X_test))) {
+    a <- casl_nn_forward_prop(X_test[i,], weights, casl_util_ReLU)$a
+    y_hat[i, ] <- a[[length(a)]]
+  }
+  y_hat 
+}
+
+#simulation
+set.seed(365)
+X <- matrix(runif(1000, min=-1, max=1), ncol=1)
+y <- X[, 1, drop = FALSE]^2 + rnorm(1000, sd = 0.1)
+
+#Create outliers:
+y[sample(1000, 50)] <- c(runif(20, 3, 7), runif(30, -6, -2))
+
+#Fit the model:
+weights <- casl_nn_sgd(X, y, sizes=c(1, 25, 1), epochs=25, eta=0.01)
+y_pred <- casl_nn_predict(weights, X)
+
+sim <- data.frame(X, y, y_pred)
+
+#Exclude outliers in the plot:
+ggplot(sim, aes(x=X, y=y)) + geom_point(size=2, color='blue', shape=18) + ylim(-0.5, 1.2) +
+  geom_smooth(color='red', linetype='dashed') +
+  geom_line(aes(x=X, y=y_pred), size=1.5)
+```
+
+According to the plot, the neural network with mean absolute deviation as a loss function works well to capture the relationship between X and y.
+
+

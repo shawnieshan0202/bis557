@@ -10,18 +10,13 @@ output: html_document
 %\VignetteIndexEntry{The Homework 5 vignette}
 -->
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-```
 
-##1. Increase the out-of-sample prediction accuracy by extracting predictive features from the images with LASSO and CNN method.
 
 Reference:
 textbook p250
 http://apapiu.github.io/2016-01-02-minst/
 With help from patty zhang for the first question
 
-#load all the libraries
 ```{r, eval=FALSE}
 library(tidyverse)
 library(glmnet)
@@ -32,7 +27,7 @@ library(readr)
 library(moments)
 ```
 
-```{r, eval=FALSE}
+```{r}
 library(keras)
 #install_keras()
 set.seed(365) 
@@ -543,8 +538,8 @@ sim <- data.frame(X, y, y_pred)
 ggplot(sim, aes(x=X, y=y)) + geom_point(size=2, color='blue', shape=18) + ylim(-0.5, 1.2) +
   geom_smooth(color='red', linetype='dashed') +
   geom_line(aes(x=X, y=y_pred), size=1.5)
-```
+#In our plot, the neural network works well to present the relationship of X and y.
 
-According to the plot, the neural network with mean absolute deviation as a loss function works well to capture the relationship between X and y.
+```
 
 
